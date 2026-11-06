@@ -14,6 +14,14 @@
   var selectedFile = null;
 
   function byId(id) { return document.getElementById(id); }
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(reader.error || new Error('No se pudo leer el archivo seleccionado.')); };
+      reader.readAsDataURL(file);
+    });
+  }
   function openDb() {
     if (!('indexedDB' in window)) return Promise.reject(new Error('Este navegador no permite guardar la cola local.'));
     if (!dbPromise) dbPromise = new Promise(function (resolve, reject) {
@@ -72,7 +80,8 @@
         var row = document.createElement('div'); row.className = 'queue-item';
         var thumb;
         if (doc.file && /^image\//.test(doc.file.type)) {
-          thumb = document.createElement('img'); thumb.src = URL.createObjectURL(doc.file); thumb.className = 'queue-thumb'; thumb.alt = '';
+          thumb = document.createElement('img'); thumb.className = 'queue-thumb'; thumb.alt = '';
+          readFileAsDataUrl(doc.file).then(function (dataUrl) { thumb.src = dataUrl; }).catch(function () { thumb.alt = 'Imagen'; });
         } else {
           thumb = document.createElement('span'); thumb.className = 'queue-thumb'; thumb.textContent = 'PDF'; thumb.setAttribute('aria-label', 'PDF');
         }
@@ -267,7 +276,19 @@
     byId('preview-wrap').hidden = !file;
     if (file) {
       if (file.type.indexOf('image/') === 0) {
-        byId('preview').src = URL.createObjectURL(file); byId('preview').hidden = false;
+        var preview = byId('preview');
+        preview.hidden = true;
+        readFileAsDataUrl(file).then(function (dataUrl) {
+          if (selectedFile !== file) return;
+          preview.src = dataUrl;
+          preview.hidden = false;
+          byId('preview-wrap').removeAttribute('data-filetype');
+        }).catch(function (error) {
+          preview.removeAttribute('src');
+          preview.hidden = true;
+          byId('preview-wrap').setAttribute('data-filetype', 'Imagen seleccionada');
+          showNotice('El archivo está seleccionado, pero no se puede mostrar la vista previa: ' + error.message, true);
+        });
       } else {
         byId('preview').removeAttribute('src'); byId('preview').hidden = true;
         byId('preview-wrap').setAttribute('data-filetype', 'PDF');
@@ -285,7 +306,8 @@
       var allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
       if (allowed.indexOf(file.type) === -1) { showNotice('Selecciona JPG, PNG, WebP o PDF.', true); event.target.value = ''; return; }
       if (file.size > MAX_FILE_BYTES) { showNotice('El archivo supera el máximo de 10 MB.', true); event.target.value = ''; return; }
-      fileToPreview(file); byId('notice').hidden = true;
+      fileToPreview(file);
+      showNotice('Archivo seleccionado: ' + file.name + '. Pulsa “Guardar documento” para añadirlo.', false);
     });
     byId('btn-drive-camera').addEventListener('click', function () {
       if (!state.api || !state.api.mobile || !state.api.mobile.camera || typeof state.api.mobile.camera.takePicture !== 'function') {
