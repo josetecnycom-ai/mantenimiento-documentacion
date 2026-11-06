@@ -1,13 +1,13 @@
 {
   "name": "Documentos de mantenimiento",
   "supportEmail": "soporte@tecnoflotas.com",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "items": [
     {
-      "url": "https://josetecnycom-ai.github.io/drive-dvir-addin/mantenimiento-documentacion/index.html",
+      "url": "https://josetecnycom-ai.github.io/mantenimiento-documentacion/index.html",
       "path": "DriveAppLink/",
       "weight": -90,
-      "icon": "https://josetecnycom-ai.github.io/drive-dvir-addin/mantenimiento-documentacion/icon.svg",
+      "icon": "https://josetecnycom-ai.github.io/mantenimiento-documentacion/icon.svg",
       "menuName": {
         "en": "Maintenance documents",
         "es": "Documentos de mantenimiento"

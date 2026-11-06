@@ -78,7 +78,10 @@
         }
         var meta = document.createElement('div'); meta.className = 'queue-meta';
         var title = document.createElement('strong'); title.textContent = displayName(doc);
-        var details = document.createElement('small'); details.textContent = (doc.provider || 'Sin proveedor') + ' · ' + doc.date + (doc.vehicleName ? ' · ' + doc.vehicleName : '');
+        var details = document.createElement('small');
+        details.textContent = doc.status === 'error' && doc.lastError
+          ? doc.lastError
+          : (doc.provider || 'Sin proveedor') + ' · ' + doc.date + (doc.vehicleName ? ' · ' + doc.vehicleName : '');
         meta.append(title, details);
         var status = document.createElement('button'); status.type = 'button'; status.className = 'status-pill ' + (doc.status === 'uploaded' ? 'ready' : doc.status === 'error' ? 'error' : ''); status.textContent = statusText(doc);
         status.addEventListener('click', function () { if (doc.status !== 'uploaded') syncQueue(true); });
@@ -182,9 +185,12 @@
       return fetch(resolveUploadUrl(session.server), { method: 'POST', body: form, credentials: 'include' }).then(function (response) {
         return response.text().then(function (text) {
           var result = null;
-          try { result = text ? JSON.parse(text) : null; } catch (ignore) { /* upload endpoints may return an empty task response */ }
+          try { result = text ? JSON.parse(text) : null; } catch (ignore) { result = null; }
           if (!response.ok) throw new Error((result && result.error && result.error.message) || text || ('Error HTTP ' + response.status));
           if (result && result.error) throw new Error(result.error.message || 'Geotab rechazó la carga del archivo.');
+          if (!result || !Object.prototype.hasOwnProperty.call(result, 'result')) {
+            throw new Error('Geotab no confirmó la carga del archivo. Respuesta recibida: ' + (text || 'vacía'));
+          }
           return result;
         });
       });
@@ -252,7 +258,8 @@
     if (!match) throw new Error('El formato devuelto por la cámara de Drive no es válido.');
     var binary = atob(match[2]); var bytes = new Uint8Array(binary.length);
     for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new File([bytes], 'foto-drive.png', { type: match[1] });
+    var extension = match[1] === 'image/jpeg' ? 'jpg' : match[1] === 'image/webp' ? 'webp' : 'png';
+    return new File([bytes], 'foto-drive.' + extension, { type: match[1] });
   }
   function fileToPreview(file) {
     selectedFile = file;
