@@ -12,8 +12,13 @@
   var state = { api: null, driveState: {}, device: null, driver: null, online: navigator.onLine, syncing: false };
   var dbPromise;
   var selectedFile = null;
+  var previewObjectUrl = null;
 
   function byId(id) { return document.getElementById(id); }
+  function markRuntimeVersion() {
+    var version = byId('build-version');
+    if (version) version.textContent = 'v0.2.7 · JS activo';
+  }
   function localDateValue(date) {
     date = date || new Date();
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
@@ -305,26 +310,46 @@
     selectedFile = file;
     byId('file-prompt').textContent = file ? file.name : 'Hacer foto o elegir archivo';
     byId('preview-wrap').hidden = !file;
+    var preview = byId('preview');
+    preview.onload = null;
+    preview.onerror = null;
+    if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
     if (file) {
       if (file.type.indexOf('image/') === 0) {
-        var preview = byId('preview');
         preview.hidden = true;
         readFileAsDataUrl(file).then(function (dataUrl) {
           if (selectedFile !== file) return;
+          var source = 'data';
+          preview.onload = function () {
+            preview.hidden = false;
+            byId('preview-wrap').removeAttribute('data-filetype');
+          };
+          preview.onerror = function () {
+            if (source === 'data' && window.URL && URL.createObjectURL) {
+              try {
+                source = 'blob';
+                previewObjectUrl = URL.createObjectURL(file);
+                preview.src = previewObjectUrl;
+                return;
+              } catch (ignore) { source = 'blocked'; }
+            }
+            preview.removeAttribute('src');
+            preview.hidden = true;
+            byId('preview-wrap').setAttribute('data-filetype', 'Foto seleccionada');
+            showNotice('La foto está seleccionada y se puede guardar, pero Drive no permite mostrar su vista previa en esta pantalla.', true);
+          };
           preview.src = dataUrl;
-          preview.hidden = false;
-          byId('preview-wrap').removeAttribute('data-filetype');
         }).catch(function (error) {
           preview.removeAttribute('src');
           preview.hidden = true;
-          byId('preview-wrap').setAttribute('data-filetype', 'Imagen seleccionada');
-          showNotice('El archivo está seleccionado, pero no se puede mostrar la vista previa: ' + error.message, true);
+          byId('preview-wrap').setAttribute('data-filetype', 'Foto seleccionada');
+          showNotice('No se pudo leer la foto seleccionada: ' + error.message, true);
         });
       } else {
-        byId('preview').removeAttribute('src'); byId('preview').hidden = true;
+        preview.removeAttribute('src'); preview.hidden = true;
         byId('preview-wrap').setAttribute('data-filetype', 'PDF');
       }
-    } else { byId('preview').removeAttribute('src'); byId('preview').hidden = false; byId('preview-wrap').removeAttribute('data-filetype'); }
+    } else { preview.removeAttribute('src'); preview.hidden = true; byId('preview-wrap').removeAttribute('data-filetype'); }
   }
   function bindUi() {
     var form = byId('document-form');
@@ -406,6 +431,7 @@
     };
   }
   registerAddin();
+  markRuntimeVersion();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindUi);
   else bindUi();
 }());
