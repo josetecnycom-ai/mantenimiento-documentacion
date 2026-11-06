@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123b35">
+  <title>Documentos de mantenimiento</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">↗</div>
+      <div><p class="eyebrow">GEOTAB DRIVE</p><h1>Documentos de flota</h1></div>
+      <span id="connection" class="connection">Conectando…</span>
+    </header>
+
+    <section class="context-card" aria-label="Vehículo y conductor">
+      <div><span class="label">VEHÍCULO</span><strong id="vehicle-name">Detectando vehículo…</strong></div>
+      <div><span class="label">CONDUCTOR</span><strong id="driver-name">Sesión de Drive</strong></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading"><div><p class="eyebrow">NUEVO REGISTRO</p><h2>Guardar documento</h2></div><span class="step">01</span></div>
+      <form id="document-form">
+        <label class="field-label" for="doc-type">Tipo de documento</label>
+        <select id="doc-type" required>
+          <option value="repair">Albarán de reparación</option>
+          <option value="receipt">Ticket / factura</option>
+          <option value="maintenance">Mantenimiento preventivo</option>
+          <option value="other">Otro documento</option>
+        </select>
+
+        <div class="field-row">
+          <div><label class="field-label" for="doc-date">Fecha</label><input id="doc-date" type="date" required></div>
+          <div><label class="field-label" for="doc-cost">Importe (€) <span class="optional">opcional</span></label><input id="doc-cost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+        </div>
+        <label class="field-label" for="doc-provider">Taller / proveedor <span class="optional">opcional</span></label>
+        <input id="doc-provider" type="text" maxlength="120" placeholder="Nombre del taller o establecimiento">
+        <label class="field-label" for="doc-notes">Descripción <span class="optional">opcional</span></label>
+        <textarea id="doc-notes" rows="2" maxlength="500" placeholder="Trabajo realizado, piezas, observaciones…"></textarea>
+
+        <label class="field-label">Foto o archivo</label>
+        <label class="upload-box" for="doc-file">
+          <span class="camera-icon" aria-hidden="true">＋</span>
+          <span><strong id="file-prompt">Hacer foto o elegir archivo</strong><small>Imagen hasta 10 MB · JPG, PNG o WebP</small></span>
+          <input id="doc-file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required>
+        </label>
+        <div id="preview-wrap" class="preview-wrap" hidden><img id="preview" alt="Vista previa del documento"><button type="button" id="remove-file" class="text-button">Quitar foto</button></div>
+
+        <fieldset class="association"><legend>Asociar expediente</legend>
+          <label><input type="radio" name="association" value="vehicle" checked> <span><strong>Vehículo</strong><small>El documento queda vinculado al vehículo actual</small></span></label>
+          <label><input type="radio" name="association" value="driver"> <span><strong>Conductor</strong><small>El documento queda vinculado al conductor de la sesión</small></span></label>
+        </fieldset>
+        <button id="save-button" class="primary-button" type="submit">Guardar documento</button>
+        <p class="privacy-note">Los documentos se guardarán asociados a la entidad seleccionada. La carga se pondrá en cola si no hay conexión.</p>
+      </form>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="panel queue-panel">
+      <div class="section-heading"><div><p class="eyebrow">EN ESTE DISPOSITIVO</p><h2>Documentos pendientes</h2></div><span id="queue-count" class="queue-count">0</span></div>
+      <div id="queue-list" class="queue-list"><p class="empty-state">Todavía no hay documentos guardados.</p></div>
+      <p class="queue-hint">La cola local permite conservar el registro mientras se recupera la conexión. La sincronización con Geotab se habilita al configurar la solución en la base de datos.</p>
+    </section>
+    <footer>Gestión de mantenimiento · Add-in independiente</footer>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>
