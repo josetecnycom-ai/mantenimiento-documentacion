@@ -14,6 +14,10 @@
   var selectedFile = null;
 
   function byId(id) { return document.getElementById(id); }
+  function localDateValue(date) {
+    date = date || new Date();
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
   function readFileAsDataUrl(file) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
@@ -299,7 +303,7 @@
     var form = byId('document-form');
     if (!form || form.dataset.bound === 'true') return;
     form.dataset.bound = 'true';
-    byId('doc-date').value = new Date().toISOString().slice(0, 10);
+    byId('doc-date').value = localDateValue();
     setOnline(navigator.onLine);
     byId('doc-file').addEventListener('change', function (event) {
       var file = event.target.files && event.target.files[0]; if (!file) return;
@@ -328,7 +332,7 @@
       if (!entity || !entity.id) { showNotice('Drive aún no ha comunicado el ' + (target === 'vehicle' ? 'vehículo' : 'conductor') + ' activo. Cierra y vuelve a abrir el add-in desde Drive.', true); return; }
       var record = {
         localId: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2),
-        type: byId('doc-type').value, date: byId('doc-date').value, cost: byId('doc-cost').value || '',
+        type: byId('doc-type').value, date: byId('doc-date').value || localDateValue(), cost: byId('doc-cost').value || '',
         provider: byId('doc-provider').value.trim(), notes: byId('doc-notes').value.trim(), association: target,
         entityId: entity.id, vehicleId: state.device && state.device.id || '', driverId: state.driver && state.driver.id || '',
         vehicleName: state.device && state.device.name || '', driverName: state.driver && state.driver.name || '',
@@ -336,7 +340,7 @@
       };
       byId('save-button').disabled = true;
       putDocument(record).then(function () {
-        form.reset(); byId('doc-date').value = new Date().toISOString().slice(0, 10); fileToPreview(null); renderQueue();
+        form.reset(); byId('doc-date').value = localDateValue(); fileToPreview(null); renderQueue();
         if (!navigator.onLine) showNotice('Guardado en este dispositivo. Se enviará al recuperar la conexión.');
         else if (!state.api) showNotice('Guardado en este dispositivo. Drive aún no ha entregado la sesión API para sincronizar.', true);
         else { showNotice('Enviando documento a Geotab…'); return syncQueue(true); }
