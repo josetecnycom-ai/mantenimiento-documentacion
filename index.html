@@ -43,9 +43,10 @@
         <label class="field-label">Foto o archivo</label>
         <label class="upload-box" for="doc-file">
           <span class="camera-icon" aria-hidden="true">＋</span>
-          <span><strong id="file-prompt">Hacer foto o elegir archivo</strong><small>Imagen hasta 10 MB · JPG, PNG o WebP</small></span>
-          <input id="doc-file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required>
+          <span><strong id="file-prompt">Hacer foto o elegir archivo</strong><small>Foto hasta 10 MB · JPG, PNG, WebP o PDF</small></span>
+          <input id="doc-file" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" required>
         </label>
+        <button id="btn-drive-camera" class="camera-button" type="button">Abrir cámara o galería de Drive</button>
         <div id="preview-wrap" class="preview-wrap" hidden><img id="preview" alt="Vista previa del documento"><button type="button" id="remove-file" class="text-button">Quitar foto</button></div>
 
         <fieldset class="association"><legend>Asociar expediente</legend>
@@ -61,7 +62,8 @@
     <section class="panel queue-panel">
       <div class="section-heading"><div><p class="eyebrow">EN ESTE DISPOSITIVO</p><h2>Documentos pendientes</h2></div><span id="queue-count" class="queue-count">0</span></div>
       <div id="queue-list" class="queue-list"><p class="empty-state">Todavía no hay documentos guardados.</p></div>
-      <p class="queue-hint">La cola local permite conservar el registro mientras se recupera la conexión. La sincronización con Geotab se habilita al configurar la solución en la base de datos.</p>
+      <button id="btn-sync-pending" class="camera-button" type="button">Sincronizar pendientes ahora</button>
+      <p class="queue-hint">Los registros pendientes se sincronizan con Geotab al tener conexión. La sincronización requiere el permiso ManageMedia para el usuario activo.</p>
     </section>
     <footer>Gestión de mantenimiento · Add-in independiente</footer>
   </main>

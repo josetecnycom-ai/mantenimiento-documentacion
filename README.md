@@ -4,17 +4,18 @@ Esta carpeta contiene una aplicación separada del add-in de inspección. No com
 
 ## Función incluida
 
-- Captura de foto desde móvil o selección de imagen.
+- Captura desde la cámara/galería nativa de Drive o selección de imagen/PDF.
 - Registro del tipo, fecha, proveedor, importe y descripción.
 - Asociación al vehículo o al conductor actual de Drive.
-- Cola local en IndexedDB para conservar documentos pendientes, incluida la captura sin conexión.
-- Validación de formatos JPG, PNG y WebP y tamaño máximo de 10 MB.
+- Cola local en IndexedDB para conservar documentos pendientes sin conexión y sincronizarlos al recuperar conexión.
+- Asociación de `MediaFile` a vehículo o conductor y metadatos con tipo, fecha, proveedor, importe y descripción.
+- Validación de JPG, PNG, WebP y PDF; límite de 10 MB.
 
 ## Estado de integración
 
-El flujo de captura y almacenamiento local está implementado. La sincronización binaria con Geotab requiere completar la configuración de `MediaFile`: registrar una `SolutionId` propia para esta solución, conceder `ManageMedia` al usuario de API y subir la imagen con `UploadMediaFile` después de crear el registro `MediaFile`. La guía de Geotab describe esos dos pasos y la asociación opcional a `Device` y `Driver`.
+El add-in crea el registro `MediaFile` y luego envía el binario mediante `UploadMediaFile`. Utiliza una `SolutionId` estable incluida en `main.js`. El usuario de Drive debe tener `ManageMedia`, y el permiso debe cubrir el vehículo/conductor asociado. La guía de Geotab describe los dos pasos de carga y los límites de archivo.
 
-La URL del manifiesto apunta a la ruta de Pages dentro del repositorio `drive-dvir-addin`. Publica esta carpeta en esa ruta y actualiza/importa la versión `0.1.1` del manifiesto en MyGeotab. El elemento usa `DriveAppLink/` para abrirse en Geotab Drive.
+La URL del manifiesto apunta a la ruta de Pages dentro del repositorio `drive-dvir-addin`. Publica esta carpeta en esa ruta y actualiza/importa la versión `0.2.0` del manifiesto en MyGeotab. El elemento usa `DriveAppLink/` para abrirse en Geotab Drive.
 
 ## Archivos
 
