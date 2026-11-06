@@ -17,7 +17,7 @@
   function byId(id) { return document.getElementById(id); }
   function markRuntimeVersion() {
     var version = byId('build-version');
-    if (version) version.textContent = 'v0.2.7 · JS activo';
+    if (version) version.textContent = 'v0.2.8 · JS activo';
   }
   function localDateValue(date) {
     date = date || new Date();
