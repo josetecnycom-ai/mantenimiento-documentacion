@@ -15,7 +15,7 @@ Esta carpeta contiene una aplicación separada del add-in de inspección. No com
 
 El add-in crea el registro `MediaFile` y luego envía el binario mediante `UploadMediaFile`. Utiliza una `SolutionId` estable incluida en `main.js`. El usuario de Drive debe tener `ManageMedia`, y el permiso debe cubrir el vehículo/conductor asociado. La guía de Geotab describe los dos pasos de carga y los límites de archivo.
 
-El repositorio Pages independiente `mantenimiento-documentacion` publica `index.html` e `icon.svg` desde su raíz. La URL del manifiesto apunta a `https://josetecnycom-ai.github.io/mantenimiento-documentacion/`. Actualiza/importa la versión `0.2.4` del manifiesto en MyGeotab. El elemento usa `DriveAppLink/` para abrirse en Geotab Drive.
+El repositorio Pages independiente `mantenimiento-documentacion` publica `index.html` e `icon.svg` desde su raíz. La URL del manifiesto apunta a `https://josetecnycom-ai.github.io/mantenimiento-documentacion/`. Actualiza/importa la versión `0.2.6` del manifiesto en MyGeotab. La versión visible en pantalla debe mostrar `v0.2.6`. Los documentos se conservan localmente aunque Drive todavía no haya proporcionado vehículo/conductor y se asocian al recibirse ese contexto. El elemento usa `DriveAppLink/` para abrirse en Geotab Drive.
 
 ## Archivos
 

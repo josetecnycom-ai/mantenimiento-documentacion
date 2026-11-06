@@ -58,6 +58,22 @@
       request.onerror = function () { reject(request.error); };
     }); });
   }
+  function hasAssociationId(doc) { return doc.association === 'vehicle' ? !!doc.vehicleId : !!doc.driverId; }
+  function linkWaitingDocuments() {
+    if (!state.device && !state.driver) return Promise.resolve();
+    return getDocuments().then(function (docs) {
+      return Promise.all(docs.map(function (doc) {
+        var changed = false;
+        if (doc.association === 'vehicle' && !doc.vehicleId && state.device && state.device.id) {
+          doc.vehicleId = state.device.id; doc.vehicleName = state.device.name || ''; changed = true;
+        }
+        if (doc.association === 'driver' && !doc.driverId && state.driver && state.driver.id) {
+          doc.driverId = state.driver.id; doc.driverName = state.driver.name || ''; changed = true;
+        }
+        return changed ? putDocument(doc) : Promise.resolve();
+      }));
+    });
+  }
   function showNotice(message, isError) {
     var notice = byId('notice');
     if (!notice) return;
@@ -158,8 +174,10 @@
         byId('connection').textContent = online ? 'Conectado a Drive' : 'Sin conexión';
         byId('connection').classList.toggle('offline', !online);
       }
-      renderQueue();
-      if (navigator.onLine) syncQueue(false);
+      return linkWaitingDocuments().then(function () {
+        renderQueue();
+        if (navigator.onLine) syncQueue(false);
+      });
     });
   }
   function getSession(api) {
@@ -218,6 +236,7 @@
     if (!state.api || !navigator.onLine) return Promise.reject(new Error('Sin conexión con Geotab.'));
     if (!record.file) return Promise.reject(new Error('El registro no contiene archivo.'));
     var makeEntity = function () {
+      if (!hasAssociationId(record)) throw new Error('Falta el vehículo o conductor para asociar el documento.');
       var entity = {
         name: makeMediaName(record), solutionId: SOLUTION_ID,
         fromDate: new Date(record.date + 'T00:00:00').toISOString(),
@@ -245,7 +264,13 @@
     if (state.syncing || !state.api || !navigator.onLine) return Promise.resolve();
     state.syncing = true;
     return getDocuments().then(function (docs) {
-      var pending = docs.filter(function (doc) { return doc.status !== 'uploaded'; });
+      var waitingForAssociation = docs.some(function (doc) { return doc.status !== 'uploaded' && !hasAssociationId(doc); });
+      var pending = docs.filter(function (doc) { return doc.status !== 'uploaded' && hasAssociationId(doc); });
+      if (!pending.length) {
+        state.syncing = false;
+        if (showResult && waitingForAssociation) showNotice('Documento guardado en este dispositivo. Drive aún no ha comunicado el vehículo o conductor para asociarlo; se intentará de nuevo al recibir ese dato.');
+        return;
+      }
       var chain = Promise.resolve();
       pending.forEach(function (doc) {
         chain = chain.then(function () {
@@ -253,7 +278,9 @@
         });
       });
       return chain.then(function () {
-        if (showResult && pending.length) showNotice('Documento(s) sincronizado(s) con Geotab.');
+        if (showResult) showNotice(waitingForAssociation
+          ? 'Documento(s) sincronizado(s). Hay otros en espera del vehículo o conductor de Drive.'
+          : 'Documento(s) sincronizado(s) con Geotab.');
       }).catch(function (error) {
         if (showResult) showNotice('No se pudo sincronizar: ' + (error.message || error), true);
       }).finally(function () { state.syncing = false; renderQueue(); });
@@ -329,12 +356,11 @@
       if (!selectedFile) { showNotice('Haz una foto o selecciona el documento.', true); return; }
       var target = document.querySelector('input[name="association"]:checked').value;
       var entity = target === 'vehicle' ? state.device : state.driver;
-      if (!entity || !entity.id) { showNotice('Drive aún no ha comunicado el ' + (target === 'vehicle' ? 'vehículo' : 'conductor') + ' activo. Cierra y vuelve a abrir el add-in desde Drive.', true); return; }
       var record = {
         localId: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2),
         type: byId('doc-type').value, date: byId('doc-date').value || localDateValue(), cost: byId('doc-cost').value || '',
         provider: byId('doc-provider').value.trim(), notes: byId('doc-notes').value.trim(), association: target,
-        entityId: entity.id, vehicleId: state.device && state.device.id || '', driverId: state.driver && state.driver.id || '',
+        entityId: entity && entity.id || '', vehicleId: state.device && state.device.id || '', driverId: state.driver && state.driver.id || '',
         vehicleName: state.device && state.device.name || '', driverName: state.driver && state.driver.name || '',
         file: selectedFile, createdAt: new Date().toISOString(), status: 'pending'
       };
@@ -342,7 +368,8 @@
       putDocument(record).then(function () {
         form.reset(); byId('doc-date').value = localDateValue(); fileToPreview(null); renderQueue();
         if (!navigator.onLine) showNotice('Guardado en este dispositivo. Se enviará al recuperar la conexión.');
-        else if (!state.api) showNotice('Guardado en este dispositivo. Drive aún no ha entregado la sesión API para sincronizar.', true);
+        else if (!state.api) showNotice('Guardado en este dispositivo. Drive aún no ha entregado la sesión API para sincronizar.');
+        else if (!entity || !entity.id) showNotice('Guardado en este dispositivo. Drive aún no ha comunicado el ' + (target === 'vehicle' ? 'vehículo' : 'conductor') + '; se asociará cuando esté disponible.');
         else { showNotice('Enviando documento a Geotab…'); return syncQueue(true); }
       }).catch(function (error) { showNotice(error.message || 'No se pudo guardar el documento.', true); })
         .finally(function () { byId('save-button').disabled = false; });
@@ -362,8 +389,13 @@
       return {
         initialize: function (api, driveState, callback) {
           state.api = api; state.driveState = driveState || {};
-          resolveDriveContext(api, state.driveState).catch(function (error) { showNotice('No se pudo leer el contexto de Drive: ' + error.message, true); })
-            .finally(function () { if (typeof callback === 'function') callback(); });
+          // Finish the Drive lifecycle handshake before optional context lookups.
+          // A slow mobile/API lookup must not leave Drive waiting to install this add-in.
+          if (typeof callback === 'function') callback();
+          window.setTimeout(function () {
+            Promise.resolve().then(function () { return resolveDriveContext(api, state.driveState); })
+              .catch(function (error) { showNotice('No se pudo leer el contexto de Drive: ' + (error.message || error), true); });
+          }, 0);
         },
         focus: function (api, driveState) {
           state.api = api; state.driveState = driveState || state.driveState;
