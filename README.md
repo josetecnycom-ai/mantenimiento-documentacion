@@ -14,7 +14,7 @@ Esta carpeta contiene una aplicación separada del add-in de inspección. No com
 
 El flujo de captura y almacenamiento local está implementado. La sincronización binaria con Geotab requiere completar la configuración de `MediaFile`: registrar una `SolutionId` propia para esta solución, conceder `ManageMedia` al usuario de API y subir la imagen con `UploadMediaFile` después de crear el registro `MediaFile`. La guía de Geotab describe esos dos pasos y la asociación opcional a `Device` y `Driver`.
 
-Antes de desplegar, reemplaza `TU-DOMINIO` en `manifest.json` por el dominio HTTPS donde alojes esta carpeta. El elemento usa `DriveAppLink/` para abrirse en Geotab Drive.
+La URL del manifiesto apunta a la ruta de Pages dentro del repositorio `drive-dvir-addin`. Publica esta carpeta en esa ruta y actualiza/importa la versión `0.1.1` del manifiesto en MyGeotab. El elemento usa `DriveAppLink/` para abrirse en Geotab Drive.
 
 ## Archivos
 

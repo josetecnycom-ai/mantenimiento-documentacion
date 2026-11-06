@@ -4,7 +4,7 @@
   var DB_NAME = 'geotab-maintenance-documents';
   var STORE_NAME = 'pending';
   var MAX_FILE_BYTES = 10 * 1024 * 1024;
-  var appState = { api: null, device: null, driver: null, online: true };
+  var appState = { api: null, state: null, device: null, driver: null, online: true };
   var dbPromise;
   var selectedFile = null;
 
@@ -70,9 +70,11 @@
   }
   function init(api, state) {
     appState.api = api;
+    appState.state = state || {};
     appState.device = state && (state.device || (state.deviceInfo && state.deviceInfo.device) || state.activeDevice) || null;
     appState.driver = state && (state.driver || (state.deviceInfo && state.deviceInfo.driver) || state.activeUser) || null;
     appState.online = !(state && state.online === false);
+    if (!byId('vehicle-name')) return;
     byId('vehicle-name').textContent = appState.device ? (appState.device.name || appState.device.id) : 'Vehículo no detectado';
     byId('driver-name').textContent = appState.driver ? (appState.driver.name || appState.driver.id || 'Conductor activo') : 'Conductor de Drive';
     setOnline(appState.online);
@@ -89,17 +91,25 @@
       };
     };
   }
+  // Geotab Drive may evaluate the Add-In script in its host page before the
+  // Add-In view has mounted. Register the lifecycle entry point first; only
+  // attach UI handlers when this document actually contains the Add-In markup.
+  registerAddin();
 
-  byId('doc-date').value = new Date().toISOString().slice(0, 10);
-  byId('doc-file').addEventListener('change', function (event) {
+  function bindUi() {
+    var form = byId('document-form');
+    if (!form || form.dataset.bound === 'true') return;
+    form.dataset.bound = 'true';
+    byId('doc-date').value = new Date().toISOString().slice(0, 10);
+    byId('doc-file').addEventListener('change', function (event) {
     var file = event.target.files && event.target.files[0];
     if (!file) return;
     if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showNotice('Selecciona una imagen JPG, PNG o WebP.', true); event.target.value = ''; return; }
     if (file.size > MAX_FILE_BYTES) { showNotice('La imagen supera el máximo de 10 MB.', true); event.target.value = ''; return; }
     fileToPreview(file);
-  });
-  byId('remove-file').addEventListener('click', function () { byId('doc-file').value = ''; fileToPreview(null); });
-  byId('document-form').addEventListener('submit', function (event) {
+    });
+    byId('remove-file').addEventListener('click', function () { byId('doc-file').value = ''; fileToPreview(null); });
+    form.addEventListener('submit', function (event) {
     event.preventDefault();
     if (!selectedFile) { showNotice('Haz una foto o selecciona la imagen del documento.', true); return; }
     var target = document.querySelector('input[name="association"]:checked').value;
@@ -119,9 +129,11 @@
       fileToPreview(null); byId('notice').hidden = true; renderQueue();
       showNotice(appState.online ? 'Documento guardado en la cola local. Para sincronizarlo con Geotab, configura la SolutionId y el permiso ManageMedia de esta solución.' : 'Documento guardado en el dispositivo y pendiente de sincronizar cuando vuelva la conexión.');
     }).catch(function (error) { showNotice(error.message || 'No se pudo guardar el documento.', true); }).finally(function () { byId('save-button').disabled = false; });
-  });
-  window.addEventListener('online', function () { setOnline(true); });
-  window.addEventListener('offline', function () { setOnline(false); });
-  registerAddin();
-  if (!window.geotab || !geotab.addin) init(null, {});
+    });
+    window.addEventListener('online', function () { if (byId('connection')) setOnline(true); });
+    window.addEventListener('offline', function () { if (byId('connection')) setOnline(false); });
+    init(appState.api, appState.state);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindUi);
+  else bindUi();
 }());
