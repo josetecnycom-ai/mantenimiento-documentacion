@@ -1,6 +1,10 @@
 (function () {
   'use strict';
 
+  var buildLabel = document.getElementById('build-version');
+  if (buildLabel) buildLabel.textContent = 'v0.2.9 · JS iniciando';
+  window.__maintenanceDocumentsBuild = '0.2.9';
+
   // Keep this ID stable across every deployment of this add-in.
   var SOLUTION_ID = (function () {
     var base64 = btoa('d94a6c23-1e57-4ff0-8a9e-2c7c8116ad42');
@@ -17,7 +21,7 @@
   function byId(id) { return document.getElementById(id); }
   function markRuntimeVersion() {
     var version = byId('build-version');
-    if (version) version.textContent = 'v0.2.8 · JS activo';
+    if (version) version.textContent = 'v0.2.9 · JS activo';
   }
   function localDateValue(date) {
     date = date || new Date();
